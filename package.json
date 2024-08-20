@@ -16,8 +16,10 @@
     "alchemy-sdk": "^3.4.1",
     "dotenv": "^16.4.5",
     "framer-motion": "^11.3.28",
+    "prop-types": "^15.8.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "thirdweb": "^5.47.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
