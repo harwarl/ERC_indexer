@@ -9,7 +9,10 @@ export const client = createThirdwebClient({
 
 const config = {
   apiKey: ALCHEMY_API_KEY,
-  network: Network.ETH_SEPOLIA,
+  network:
+    import.meta.env.VITE_NODE_ENV === "development"
+      ? Network.ETH_SEPOLIA
+      : Network.ETH_MAINNET,
 };
 
 export const alchemy = new Alchemy(config);
