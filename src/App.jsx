@@ -53,7 +53,7 @@ function App() {
         </Heading>
 
         <Heading mt={6} fontSize={isSmallScreen ? 18 : 24}>
-          Get all the ERC-20 token balances of this address
+          Retrieve all ERC-20 token balances
         </Heading>
 
         {activeAccount ? (
