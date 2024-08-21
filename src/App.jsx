@@ -2,128 +2,111 @@ import {
   Box,
   Button,
   Center,
-  Flex,
   Heading,
-  Image,
-  // Input,
   SimpleGrid,
+  Spinner,
   // Text,
 } from "@chakra-ui/react";
-import { Utils } from "alchemy-sdk";
 import { useState } from "react";
 import Wallet from "./Components/Wallet";
-import { alchemy } from "../config";
+import { ConnectButton, useActiveAccount } from "thirdweb/react";
+import { alchemy, client } from "../config";
+import Token from "./Components/Token";
 
 function App() {
+  const activeAccount = useActiveAccount();
   const [userAddress, setUserAddress] = useState("");
   const [results, setResults] = useState([]);
   const [hasQueried, setHasQueried] = useState(false);
   const [tokenDataObjects, setTokenDataObjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   async function getTokenBalance() {
-    const data = await alchemy.core.getTokenBalances(userAddress);
-
-    setResults(data);
-
-    const tokenDataPromises = [];
-
-    for (let i = 0; i < data.tokenBalances.length; i++) {
-      const tokenData = alchemy.core.getTokenMetadata(
-        data.tokenBalances[i].contractAddress
-      );
-      tokenDataPromises.push(tokenData);
+    setIsLoading(true);
+    try {
+      const data = await alchemy.core.getTokenBalances(userAddress);
+      setResults(data);
+      const tokenDataPromises = [];
+      for (let i = 0; i < data.tokenBalances.length; i++) {
+        const tokenData = alchemy.core.getTokenMetadata(
+          data.tokenBalances[i].contractAddress
+        );
+        tokenDataPromises.push(tokenData);
+      }
+      setTokenDataObjects(await Promise.all(tokenDataPromises));
+      setHasQueried(true);
+    } finally {
+      setIsLoading(false);
     }
-
-    setTokenDataObjects(await Promise.all(tokenDataPromises));
-    setHasQueried(true);
   }
 
   return (
     <Box w={"100vw"} h={"100vh"} display={"flex"} flexDir={"column"} py={10}>
       <Box mr={30} pt={10}>
-        <Wallet setUserAddress={setUserAddress} />
+        <Wallet setUserAddress={setUserAddress} setHasQueried={setHasQueried} />
       </Box>
-      <Box>
-        <Flex
-          alignItems="center"
-          justifyContent="center"
-          flexDirection="column"
-        >
-          <Heading mb={0} fontSize={36}>
-            ERC-20 Token Indexer
-          </Heading>
-          {/* <Text>
-            Plug in an address and this website will return all of its ERC-20
-            token balances
-          </Text> */}
-        </Flex>
+      <Center flexDir={"column"}>
+        <Heading mb={0} fontSize={36}>
+          ERC-20 Token Indexer
+        </Heading>
 
-        <Flex
-          w="100%"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Heading mt={42}>
-            Get all the ERC-20 token balances of this address
-          </Heading>
-          {/* <Input
-          onChange={(e) => {
-            setUserAddress(e.target.value);
-          }}
-          color="black"
-          w="600px"
-          textAlign="center"
-          p={4}
-          bgColor="white"
-          fontSize={24}
-        /> */}
+        <Heading mt={42}>
+          Get all the ERC-20 token balances of this address
+        </Heading>
 
+        {activeAccount ? (
           <Button
             fontSize={20}
             onClick={getTokenBalance}
             mt={36}
-            bgColor={"blue"}
+            bgColor={"#045C14"}
+            color={"#ffffff"}
           >
             Check ERC-20 Token Balances
           </Button>
+        ) : (
+          <ConnectButton
+            client={client}
+            appMetadata={{
+              logoUrl: "../../public/eth.png",
+            }}
+            connectButton={{
+              label: "Connect Wallet",
+            }}
+            theme={{
+              colors: {
+                primaryButtonBg: "#4CAF50",
+                primaryButtonText: "#FFFFFF",
+              },
+            }}
+          />
+        )}
 
-          <Heading my={36}>ERC-20 token balances:</Heading>
+        {hasQueried && !isLoading && results.tokenBalances.length > 0 && (
+          <Heading my={20}>ERC-20 token balances</Heading>
+        )}
 
-          {hasQueried ? (
-            <SimpleGrid w={"90vw"} columns={3} spacing={24}>
-              {results.tokenBalances.map((data, i) => {
-                return (
-                  <Flex
-                    flexDir={"column"}
-                    color={"white"}
-                    border={"red 1px solid"}
-                    bg={"blue"}
-                    w={"20vw"}
-                    p={10}
-                    borderRadius={5}
-                    key={data.id}
-                  >
-                    <Box>
-                      <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
-                    </Box>
-                    <Box>
-                      <b>Balance:</b>&nbsp;
-                      {Utils.formatUnits(
-                        data.tokenBalance,
-                        tokenDataObjects[i].decimals
-                      )}
-                    </Box>
-                    <Image src={tokenDataObjects[i].logo} />
-                  </Flex>
-                );
-              })}
-            </SimpleGrid>
-          ) : (
-            "Please make a query! This may take a few seconds..."
-          )}
-        </Flex>
-      </Box>
+        {!hasQueried && isLoading && (
+          <Spinner my={40} thickness="4px" color="blue.500" size="xl" />
+        )}
+
+        {hasQueried && !isLoading && results.tokenBalances.length === 0 && (
+          <Center mt={6}>
+            <Heading fontSize="lg">No tokens found for this address.</Heading>
+          </Center>
+        )}
+
+        {/* ERC token Balances */}
+        {hasQueried && !isLoading && results.tokenBalances.length > 0 && (
+          <SimpleGrid w="90vw" spacing={6} minChildWidth="250px">
+            {results.tokenBalances.map((data, i) => {
+              return (
+                <Token key={i} tokenData={tokenDataObjects[i]} data={data} />
+              );
+            })}
+          </SimpleGrid>
+        )}
+      </Center>
     </Box>
   );
 }
