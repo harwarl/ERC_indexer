@@ -31,6 +31,7 @@ const Wallet = ({ setUserAddress, setHasQueried }) => {
               disconnect(wallet);
               setHasQueried(false);
             }}
+            mr={40}
             py={10}
             px={25}
             bgColor={"#940C3C"}
